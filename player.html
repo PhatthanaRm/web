@@ -186,6 +186,8 @@ body {
   grid-template-columns: repeat(2, 1fr);
   gap: 20px;
   margin: 30px 0;
+  position: relative;
+  z-index: 10;
 }
 
 @media (max-width: 768px) {
@@ -621,6 +623,10 @@ function listenToGame() {
       document.getElementById('feedbackScreen').classList.add('hidden');
       document.getElementById('leaderboardScreen').classList.add('hidden');
     } else if (roomData.status === 'question' && roomData.questionData) {
+      // Reset buttons flag when new question starts
+      if (currentQuestionIndex !== (roomData.currentQuestion || 0)) {
+        questionButtonsCreated = false;
+      }
       showQuestion(roomData);
     } else if (roomData.status === 'results') {
       showFeedback(roomData);
@@ -641,53 +647,118 @@ function listenToGame() {
   });
 }
 
+let questionButtonsCreated = false;
+let currentQuestionIndex = -1;
+
 function showQuestion(roomData) {
+  // Only create buttons once per question
+  const questionIndex = roomData.currentQuestion || 0;
+  
+  // If buttons already created for this question, don't recreate
+  if (questionButtonsCreated && currentQuestionIndex === questionIndex && currentAnswer === null) {
+    return;
+  }
+  
   document.getElementById('waitingScreen').classList.add('hidden');
   document.getElementById('questionScreen').classList.remove('hidden');
   document.getElementById('feedbackScreen').classList.add('hidden');
   document.getElementById('leaderboardScreen').classList.add('hidden');
   
+  // Ensure question screen is visible
+  const questionScreen = document.getElementById('questionScreen');
+  questionScreen.style.display = 'block';
+  questionScreen.style.pointerEvents = 'auto';
+  
   const question = roomData.questionData;
+  
+  if (!question || !question.answers) {
+    console.error('Invalid question data:', question);
+    return;
+  }
   
   // Create answer buttons - only show buttons, no question text
   const container = document.getElementById('answersContainer');
   container.innerHTML = '';
+  container.style.pointerEvents = 'auto';
   
   const colors = ['red', 'blue', 'yellow', 'green'];
   const labels = ['A', 'B', 'C', 'D'];
+  
+  // Reset answer state for new question
+  currentAnswer = null;
+  currentQuestionIndex = questionIndex;
+  
   question.answers.forEach((answer, index) => {
     const btn = document.createElement('button');
     btn.className = `answer-btn ${colors[index]}`;
     btn.textContent = `${labels[index]}`;
     btn.dataset.answerIndex = index;
-    btn.type = 'button'; // Ensure it's a button, not submit
+    btn.type = 'button';
     btn.disabled = false;
     btn.style.pointerEvents = 'auto';
     btn.style.cursor = 'pointer';
     btn.style.opacity = '1';
     btn.style.userSelect = 'none';
+    btn.style.zIndex = '100';
+    btn.style.position = 'relative';
     btn.classList.remove('selected');
     
-    // Use both click and touch events for better mobile support
-    const handleAnswer = function(e) {
+    // Store index in closure
+    const answerIndex = index;
+    const correctIndex = question.correct;
+    
+    // Direct onclick handler - simpler and more reliable
+    btn.onclick = function(e) {
       e.preventDefault();
       e.stopPropagation();
-      if (!btn.disabled && currentAnswer === null) {
-        selectAnswer(index, question.correct);
+      e.stopImmediatePropagation();
+      console.log('Button clicked:', answerIndex, 'Current answer:', currentAnswer, 'Room:', roomCode, 'Player:', playerId);
+      if (currentAnswer === null && roomCode && playerId) {
+        selectAnswer(answerIndex, correctIndex);
+      } else {
+        console.warn('Cannot answer:', { currentAnswer, roomCode, playerId });
       }
+      return false;
     };
     
-    btn.addEventListener('click', handleAnswer);
-    btn.addEventListener('touchend', handleAnswer);
+    // Also add touch support
+    btn.ontouchstart = function(e) {
+      e.preventDefault();
+    };
+    
+    btn.ontouchend = function(e) {
+      e.preventDefault();
+      e.stopPropagation();
+      console.log('Button touched:', answerIndex, 'Current answer:', currentAnswer);
+      if (currentAnswer === null && roomCode && playerId) {
+        selectAnswer(answerIndex, correctIndex);
+      }
+      return false;
+    };
     
     container.appendChild(btn);
   });
   
-  currentAnswer = null;
+  questionButtonsCreated = true;
+  
+  // Debug: Log that buttons were created
+  console.log('Buttons created:', container.children.length, 'Question:', questionIndex);
+  console.log('RoomCode:', roomCode, 'PlayerId:', playerId);
 }
 
 function selectAnswer(answerIndex, correctIndex) {
-  if (currentAnswer !== null) return; // Already answered
+  console.log('selectAnswer called:', { answerIndex, currentAnswer, roomCode, playerId });
+  
+  if (currentAnswer !== null) {
+    console.log('Already answered, returning');
+    return; // Already answered
+  }
+  
+  if (!roomCode || !playerId) {
+    console.error('Missing roomCode or playerId:', { roomCode, playerId });
+    alert('Error: Not connected to game. Please refresh and rejoin.');
+    return;
+  }
   
   currentAnswer = answerIndex;
   const buttons = document.querySelectorAll('.answer-btn');
@@ -715,12 +786,55 @@ function selectAnswer(answerIndex, correctIndex) {
   // Send answer to Firebase with timestamp
   const answerTime = Date.now();
   const playerRef = ref(db, `rooms/${roomCode}/players/${playerId}`);
-  update(playerRef, {
+  
+  const answerData = {
     answered: true,
     answer: answerIndex,
     answerTime: answerTime
+  };
+  
+  console.log('Sending answer to Firebase:', { 
+    path: `rooms/${roomCode}/players/${playerId}`,
+    data: answerData,
+    roomCode, 
+    playerId, 
+    answerIndex, 
+    answerTime 
+  });
+  
+  // Use update - it's more reliable for partial updates
+  update(playerRef, answerData).then(() => {
+    console.log('Answer sent successfully via update!');
   }).catch(error => {
     console.error('Error sending answer:', error);
+    console.error('Error details:', {
+      code: error.code,
+      message: error.message,
+      roomCode,
+      playerId
+    });
+    
+    // Try set as fallback
+    get(playerRef).then((snapshot) => {
+      const existingData = snapshot.val() || {};
+      return set(playerRef, {
+        ...existingData,
+        ...answerData
+      });
+    }).then(() => {
+      console.log('Answer sent successfully via set fallback!');
+    }).catch(setError => {
+      console.error('Both update and set failed:', setError);
+      alert('Error sending answer. Please check console and try again.');
+      // Reset so they can try again
+      currentAnswer = null;
+      buttons.forEach(btn => {
+        btn.disabled = false;
+        btn.style.pointerEvents = 'auto';
+        btn.style.cursor = 'pointer';
+        btn.style.opacity = '1';
+      });
+    });
   });
 }
 
