@@ -1,0 +1,596 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Kahoot-Style Quiz - Player</title>
+<style>
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: 'Montserrat', 'Nunito', sans-serif;
+  background: linear-gradient(135deg, #0d4a2c 0%, #1a5f3f 100%);
+  color: white;
+  min-height: 100vh;
+  overflow-x: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.container {
+  width: 100%;
+  max-width: 600px;
+  padding: 20px;
+}
+
+.join-screen {
+  text-align: center;
+  background: rgba(255,255,255,0.15);
+  backdrop-filter: blur(10px);
+  border-radius: 30px;
+  padding: 60px 40px;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+}
+
+.join-screen h1 {
+  font-size: 3.5rem;
+  font-weight: 900;
+  margin-bottom: 30px;
+  text-shadow: 3px 3px 0px rgba(0,0,0,0.3);
+  letter-spacing: -2px;
+}
+
+.input-group {
+  margin: 30px 0;
+}
+
+.input-group input {
+  padding: 20px;
+  border: none;
+  border-radius: 50px;
+  font-size: 1.5rem;
+  text-align: center;
+  width: 100%;
+  max-width: 300px;
+  margin: 10px 0;
+  box-shadow: 0 6px 20px rgba(0,0,0,0.3);
+  font-weight: 700;
+  letter-spacing: 5px;
+}
+
+.btn {
+  padding: 20px 50px;
+  border: none;
+  border-radius: 50px;
+  font-size: 1.3rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 6px 20px rgba(0,0,0,0.3);
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  margin: 10px;
+  width: 100%;
+  max-width: 300px;
+}
+
+.btn-primary {
+  background: linear-gradient(135deg, #ffd700, #daa520);
+  color: #0d4a2c;
+}
+
+.btn:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 10px 30px rgba(0,0,0,0.4);
+}
+
+.btn:active {
+  transform: translateY(0);
+}
+
+.game-screen {
+  display: none;
+}
+
+.waiting-screen {
+  text-align: center;
+  background: rgba(255,255,255,0.15);
+  backdrop-filter: blur(10px);
+  border-radius: 30px;
+  padding: 60px 40px;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+}
+
+.waiting-screen h2 {
+  font-size: 2.5rem;
+  margin-bottom: 30px;
+  font-weight: 700;
+}
+
+.spinner {
+  border: 5px solid rgba(255,255,255,0.3);
+  border-top: 5px solid white;
+  border-radius: 50%;
+  width: 60px;
+  height: 60px;
+  animation: spin 1s linear infinite;
+  margin: 30px auto;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.question-screen {
+  text-align: center;
+}
+
+.question-display {
+  background: rgba(255,255,255,0.2);
+  border-radius: 25px;
+  padding: 40px 30px;
+  margin: 20px 0;
+  font-size: 2rem;
+  font-weight: 700;
+  min-height: 150px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+  line-height: 1.4;
+}
+
+.timer-display {
+  font-size: 5rem;
+  font-weight: 900;
+  margin: 30px 0;
+  text-shadow: 4px 4px 0px rgba(0,0,0,0.3);
+  transition: all 0.3s ease;
+}
+
+.timer-warning {
+  color: #ff6b6b;
+  animation: pulse 1s infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.1); }
+}
+
+.answers-container {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 20px;
+  margin: 30px 0;
+}
+
+.answer-btn {
+  padding: 30px;
+  border: none;
+  border-radius: 20px;
+  font-size: 1.8rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 6px 20px rgba(0,0,0,0.3);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  position: relative;
+  overflow: hidden;
+  width: 100%;
+}
+
+.answer-btn:hover:not(:disabled) {
+  transform: translateY(-5px) scale(1.02);
+  box-shadow: 0 10px 30px rgba(0,0,0,0.4);
+}
+
+.answer-btn:active:not(:disabled) {
+  transform: translateY(0) scale(0.98);
+}
+
+.answer-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.answer-btn.red { 
+  background: linear-gradient(135deg, #ff6b6b, #ee5a6f);
+  color: white;
+}
+
+.answer-btn.blue { 
+  background: linear-gradient(135deg, #2d7a4f, #1a5f3f);
+  color: white;
+}
+
+.answer-btn.yellow { 
+  background: linear-gradient(135deg, #ffd700, #daa520);
+  color: #0d4a2c;
+}
+
+.answer-btn.green { 
+  background: linear-gradient(135deg, #4a9d7a, #2d7a4f);
+  color: white;
+}
+
+.answer-btn.selected {
+  transform: scale(1.05);
+  box-shadow: 0 0 40px rgba(255,255,255,0.6);
+  border: 5px solid white;
+}
+
+.answer-btn.correct {
+  box-shadow: 0 0 50px rgba(255, 215, 0, 0.8);
+  border: 5px solid #ffd700;
+  animation: correctPulse 0.5s ease;
+}
+
+.answer-btn.wrong {
+  opacity: 0.5;
+  filter: grayscale(50%);
+}
+
+@keyframes correctPulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.1); }
+}
+
+.player-info {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  background: rgba(255,255,255,0.2);
+  backdrop-filter: blur(10px);
+  border-radius: 15px;
+  padding: 15px 25px;
+  box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+}
+
+.player-name {
+  font-size: 1.2rem;
+  font-weight: 700;
+  margin-bottom: 5px;
+}
+
+.player-score {
+  font-size: 1.5rem;
+  font-weight: 900;
+  color: #ffd700;
+}
+
+.feedback-screen {
+  text-align: center;
+  background: rgba(255,255,255,0.15);
+  backdrop-filter: blur(10px);
+  border-radius: 30px;
+  padding: 60px 40px;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+}
+
+.feedback-icon {
+  font-size: 6rem;
+  margin: 20px 0;
+  animation: bounce 0.6s ease;
+}
+
+@keyframes bounce {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-30px); }
+}
+
+.feedback-message {
+  font-size: 2.5rem;
+  font-weight: 700;
+  margin: 20px 0;
+}
+
+.feedback-score {
+  font-size: 3rem;
+  font-weight: 900;
+  color: #ffd700;
+  margin: 20px 0;
+}
+
+.hidden {
+  display: none;
+}
+
+.fade-in {
+  animation: fadeIn 0.5s ease;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.error-message {
+  color: #ff6b6b;
+  margin-top: 15px;
+  font-size: 1.1rem;
+  font-weight: 600;
+}
+</style>
+</head>
+<body>
+<div class="container">
+  <!-- Join Screen -->
+  <div id="joinScreen" class="join-screen fade-in">
+    <h1>🎮 Join Game</h1>
+    <div class="input-group">
+      <input type="text" id="playerNameInput" placeholder="Enter Your Name" maxlength="20">
+      <input type="text" id="roomCodeInput" placeholder="Room Code" maxlength="4" style="letter-spacing: 10px;">
+    </div>
+    <button class="btn btn-primary" id="joinButton">Join Game</button>
+    <div id="errorMessage" class="error-message"></div>
+  </div>
+
+  <!-- Waiting Screen -->
+  <div id="waitingScreen" class="game-screen waiting-screen">
+    <h2>Waiting for game to start...</h2>
+    <div class="spinner"></div>
+    <p style="margin-top: 20px; font-size: 1.2rem;">Get ready!</p>
+  </div>
+
+  <!-- Question Screen -->
+  <div id="questionScreen" class="game-screen question-screen">
+    <div class="player-info">
+      <div class="player-name" id="playerNameDisplay">Player</div>
+      <div class="player-score" id="playerScoreDisplay">0 pts</div>
+    </div>
+
+    <div class="question-display" id="questionDisplay">Loading question...</div>
+    
+    <div class="timer-display" id="timerDisplay">30</div>
+
+    <div class="answers-container" id="answersContainer"></div>
+  </div>
+
+  <!-- Feedback Screen -->
+  <div id="feedbackScreen" class="game-screen feedback-screen">
+    <div class="feedback-icon" id="feedbackIcon">✓</div>
+    <div class="feedback-message" id="feedbackMessage">Correct!</div>
+    <div class="feedback-score" id="feedbackScore">+100 pts</div>
+  </div>
+</div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+import { getDatabase, ref, set, get, onValue, push, update } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyA3s_qYIn5BzRmbZIJtg3nYucZ1428hefg",
+  authDomain: "quiz-seminar.firebaseapp.com",
+  databaseURL: "https://quiz-seminar-default-rtdb.asia-southeast1.firebasedatabase.app",
+  projectId: "quiz-seminar",
+  storageBucket: "quiz-seminar.firebasestorage.app",
+  messagingSenderId: "251709040357",
+  appId: "1:251709040357:web:75bb059b1d89b9ec0fd60c",
+  measurementId: "G-T0GT06PX3N"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getDatabase();
+
+let playerId = '';
+let playerName = '';
+let roomCode = '';
+let currentAnswer = null;
+let playerScore = 0;
+
+function joinRoom() {
+  const name = document.getElementById('playerNameInput').value.trim();
+  const code = document.getElementById('roomCodeInput').value.trim();
+  const errorMsg = document.getElementById('errorMessage');
+  
+  if (!name) {
+    errorMsg.textContent = 'Please enter your name!';
+    return;
+  }
+  
+  if (!code || code.length !== 4) {
+    errorMsg.textContent = 'Please enter a valid 4-digit room code!';
+    return;
+  }
+  
+  playerName = name;
+  roomCode = code;
+  errorMsg.textContent = '';
+  
+  // Check if room exists
+  const roomRef = ref(db, `rooms/${code}`);
+  get(roomRef).then((snapshot) => {
+    if (!snapshot.exists()) {
+      errorMsg.textContent = 'Room not found!';
+      return;
+    }
+    
+    // Create player
+    const playersRef = ref(db, `rooms/${code}/players`);
+    const newPlayerRef = push(playersRef);
+    playerId = newPlayerRef.key;
+    
+    set(newPlayerRef, {
+      name: playerName,
+      score: 0,
+      answered: false,
+      answer: null
+    });
+    
+    // Show waiting screen
+    document.getElementById('joinScreen').classList.add('hidden');
+    document.getElementById('waitingScreen').classList.remove('hidden');
+    document.getElementById('waitingScreen').classList.add('game-screen');
+    document.getElementById('playerNameDisplay').textContent = playerName;
+    
+    // Listen for game updates
+    listenToGame();
+  }).catch((error) => {
+    errorMsg.textContent = 'Error connecting to room!';
+    console.error(error);
+  });
+}
+
+function listenToGame() {
+  const roomRef = ref(db, `rooms/${roomCode}`);
+  
+  onValue(roomRef, (snapshot) => {
+    const roomData = snapshot.val();
+    if (!roomData) return;
+    
+    // Update player score
+    if (roomData.players && roomData.players[playerId]) {
+      playerScore = roomData.players[playerId].score || 0;
+      document.getElementById('playerScoreDisplay').textContent = `${playerScore} pts`;
+    }
+    
+    // Handle different game states
+    if (roomData.status === 'waiting') {
+      document.getElementById('waitingScreen').classList.remove('hidden');
+      document.getElementById('questionScreen').classList.add('hidden');
+      document.getElementById('feedbackScreen').classList.add('hidden');
+    } else if (roomData.status === 'question' && roomData.questionData) {
+      showQuestion(roomData);
+    } else if (roomData.status === 'results') {
+      showFeedback(roomData);
+    } else if (roomData.status === 'ended') {
+      showEndGame();
+    }
+    
+    // Update timer
+    if (roomData.timer !== undefined) {
+      const timerEl = document.getElementById('timerDisplay');
+      timerEl.textContent = roomData.timer;
+      if (roomData.timer <= 10) {
+        timerEl.classList.add('timer-warning');
+      } else {
+        timerEl.classList.remove('timer-warning');
+      }
+    }
+  });
+}
+
+function showQuestion(roomData) {
+  document.getElementById('waitingScreen').classList.add('hidden');
+  document.getElementById('questionScreen').classList.remove('hidden');
+  document.getElementById('feedbackScreen').classList.add('hidden');
+  
+  const question = roomData.questionData;
+  document.getElementById('questionDisplay').textContent = question.question;
+  
+  // Create answer buttons
+  const container = document.getElementById('answersContainer');
+  container.innerHTML = '';
+  
+  const colors = ['red', 'blue', 'yellow', 'green'];
+  question.answers.forEach((answer, index) => {
+    const btn = document.createElement('button');
+    btn.className = `answer-btn ${colors[index]}`;
+    btn.textContent = answer;
+    btn.onclick = () => selectAnswer(index, question.correct);
+    container.appendChild(btn);
+  });
+  
+  currentAnswer = null;
+}
+
+function selectAnswer(answerIndex, correctIndex) {
+  if (currentAnswer !== null) return; // Already answered
+  
+  currentAnswer = answerIndex;
+  const buttons = document.querySelectorAll('.answer-btn');
+  
+  buttons.forEach((btn, index) => {
+    btn.disabled = true;
+    if (index === answerIndex) {
+      btn.classList.add('selected');
+    }
+  });
+  
+  // Send answer to Firebase
+  const playerRef = ref(db, `rooms/${roomCode}/players/${playerId}`);
+  update(playerRef, {
+    answered: true,
+    answer: answerIndex
+  });
+  
+  // Calculate score based on time (simplified)
+  const timerEl = document.getElementById('timerDisplay');
+  const timeLeft = parseInt(timerEl.textContent);
+  let points = 0;
+  
+  if (answerIndex === correctIndex) {
+    points = Math.max(100, timeLeft * 10);
+    playerScore += points;
+    update(playerRef, { score: playerScore });
+  }
+}
+
+function showFeedback(roomData) {
+  document.getElementById('questionScreen').classList.add('hidden');
+  document.getElementById('feedbackScreen').classList.remove('hidden');
+  
+  const question = roomData.questionData;
+  const playerData = roomData.players[playerId];
+  
+  if (playerData && playerData.answer === question.correct) {
+    document.getElementById('feedbackIcon').textContent = '✓';
+    document.getElementById('feedbackIcon').style.color = '#ffd700';
+    document.getElementById('feedbackMessage').textContent = 'Correct!';
+    document.getElementById('feedbackMessage').style.color = '#ffd700';
+    
+    // Calculate points
+    const timeLeft = roomData.timer || 0;
+    const points = Math.max(100, timeLeft * 10);
+    document.getElementById('feedbackScore').textContent = `+${points} pts`;
+  } else {
+    document.getElementById('feedbackIcon').textContent = '✗';
+    document.getElementById('feedbackIcon').style.color = '#ff6b6b';
+    document.getElementById('feedbackMessage').textContent = 'Wrong!';
+    document.getElementById('feedbackMessage').style.color = '#ff6b6b';
+    document.getElementById('feedbackScore').textContent = '+0 pts';
+  }
+  
+  // Highlight correct answer
+  const buttons = document.querySelectorAll('.answer-btn');
+  buttons.forEach((btn, index) => {
+    if (index === question.correct) {
+      btn.classList.add('correct');
+    } else if (index === currentAnswer && index !== question.correct) {
+      btn.classList.add('wrong');
+    }
+  });
+}
+
+function showEndGame() {
+  document.getElementById('questionScreen').classList.add('hidden');
+  document.getElementById('feedbackScreen').classList.remove('hidden');
+  document.getElementById('feedbackIcon').textContent = '🏆';
+  document.getElementById('feedbackMessage').textContent = 'Game Over!';
+  document.getElementById('feedbackScore').textContent = `Final Score: ${playerScore} pts`;
+}
+
+// Set up event listeners
+document.getElementById('joinButton').addEventListener('click', joinRoom);
+
+// Allow Enter key to join
+document.getElementById('roomCodeInput').addEventListener('keypress', (e) => {
+  if (e.key === 'Enter') joinRoom();
+});
+
+document.getElementById('playerNameInput').addEventListener('keypress', (e) => {
+  if (e.key === 'Enter') {
+    document.getElementById('roomCodeInput').focus();
+  }
+});
+</script>
+</body>
+</html>

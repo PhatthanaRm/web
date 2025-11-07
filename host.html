@@ -1,0 +1,657 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Kahoot-Style Quiz - Host</title>
+<style>
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: 'Montserrat', 'Nunito', sans-serif;
+  background: linear-gradient(135deg, #0d4a2c 0%, #1a5f3f 100%);
+  color: white;
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+.container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 20px;
+}
+
+.header {
+  text-align: center;
+  margin-bottom: 30px;
+}
+
+.header h1 {
+  font-size: 3rem;
+  font-weight: 900;
+  text-shadow: 3px 3px 0px rgba(0,0,0,0.3);
+  margin-bottom: 10px;
+  letter-spacing: -1px;
+}
+
+.room-section {
+  background: rgba(255,255,255,0.15);
+  backdrop-filter: blur(10px);
+  border-radius: 20px;
+  padding: 30px;
+  margin-bottom: 30px;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.2);
+}
+
+.room-code-display {
+  font-size: 5rem;
+  font-weight: 900;
+  letter-spacing: 20px;
+  text-align: center;
+  margin: 20px 0;
+  text-shadow: 4px 4px 0px rgba(0,0,0,0.3);
+  background: linear-gradient(45deg, #ffd700, #ffed4e);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.question-display {
+  background: rgba(255,255,255,0.2);
+  border-radius: 20px;
+  padding: 40px;
+  margin: 20px 0;
+  min-height: 200px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 2.5rem;
+  font-weight: 700;
+  text-align: center;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.2);
+  transition: all 0.3s ease;
+}
+
+.timer-display {
+  font-size: 4rem;
+  font-weight: 900;
+  text-align: center;
+  margin: 20px 0;
+  text-shadow: 3px 3px 0px rgba(0,0,0,0.3);
+  transition: all 0.3s ease;
+}
+
+.timer-warning {
+  color: #ff6b6b;
+  animation: pulse 1s infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.1); }
+}
+
+.answers-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 20px;
+  margin: 30px 0;
+}
+
+.answer-btn {
+  padding: 30px;
+  border: none;
+  border-radius: 20px;
+  font-size: 1.5rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 6px 20px rgba(0,0,0,0.3);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  position: relative;
+  overflow: hidden;
+}
+
+.answer-btn:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 10px 30px rgba(0,0,0,0.4);
+}
+
+.answer-btn:active {
+  transform: translateY(0);
+}
+
+.answer-btn.red { background: linear-gradient(135deg, #ff6b6b, #ee5a6f); }
+.answer-btn.blue { background: linear-gradient(135deg, #2d7a4f, #1a5f3f); }
+.answer-btn.yellow { background: linear-gradient(135deg, #ffd700, #daa520); color: #0d4a2c; }
+.answer-btn.green { background: linear-gradient(135deg, #4a9d7a, #2d7a4f); }
+
+.answer-btn.selected {
+  transform: scale(1.05);
+  box-shadow: 0 0 30px rgba(255,255,255,0.5);
+}
+
+.control-buttons {
+  display: flex;
+  gap: 15px;
+  justify-content: center;
+  flex-wrap: wrap;
+  margin: 30px 0;
+}
+
+.btn {
+  padding: 15px 40px;
+  border: none;
+  border-radius: 50px;
+  font-size: 1.2rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 6px 20px rgba(0,0,0,0.3);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.btn-primary {
+  background: linear-gradient(135deg, #ffd700, #daa520);
+  color: #0d4a2c;
+}
+
+.btn-success {
+  background: linear-gradient(135deg, #ffd700, #ffed4e);
+  color: #0d4a2c;
+}
+
+.btn-danger {
+  background: linear-gradient(135deg, #ff6b6b, #ee5a6f);
+  color: white;
+}
+
+.btn:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 10px 30px rgba(0,0,0,0.4);
+}
+
+.btn:active {
+  transform: translateY(0);
+}
+
+.players-list {
+  background: rgba(255,255,255,0.15);
+  backdrop-filter: blur(10px);
+  border-radius: 20px;
+  padding: 20px;
+  margin-top: 30px;
+  max-height: 400px;
+  overflow-y: auto;
+}
+
+.players-list h2 {
+  margin-bottom: 20px;
+  font-size: 1.8rem;
+}
+
+.player-item {
+  background: rgba(255,255,255,0.2);
+  padding: 15px;
+  margin: 10px 0;
+  border-radius: 15px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  transition: all 0.3s ease;
+}
+
+.player-item:hover {
+  background: rgba(255,255,255,0.3);
+  transform: translateX(10px);
+}
+
+.player-name {
+  font-size: 1.3rem;
+  font-weight: 600;
+}
+
+.player-score {
+  font-size: 1.5rem;
+  font-weight: 900;
+  color: #ffd700;
+  text-shadow: 2px 2px 0px rgba(0,0,0,0.3);
+}
+
+.input-group {
+  margin: 20px 0;
+}
+
+.input-group input {
+  padding: 15px 20px;
+  border: none;
+  border-radius: 50px;
+  font-size: 1.2rem;
+  text-align: center;
+  width: 200px;
+  margin: 0 10px;
+  box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+}
+
+.stats-display {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 20px;
+  margin: 30px 0;
+}
+
+.stat-card {
+  background: rgba(255,255,255,0.15);
+  backdrop-filter: blur(10px);
+  border-radius: 15px;
+  padding: 20px;
+  text-align: center;
+  box-shadow: 0 6px 20px rgba(0,0,0,0.2);
+}
+
+.stat-value {
+  font-size: 2.5rem;
+  font-weight: 900;
+  margin: 10px 0;
+}
+
+.stat-label {
+  font-size: 1rem;
+  opacity: 0.9;
+}
+
+.hidden {
+  display: none;
+}
+
+.fade-in {
+  animation: fadeIn 0.5s ease;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.waiting-screen {
+  text-align: center;
+  padding: 60px 20px;
+}
+
+.waiting-screen h2 {
+  font-size: 3rem;
+  margin-bottom: 30px;
+}
+
+.spinner {
+  border: 5px solid rgba(255,255,255,0.3);
+  border-top: 5px solid white;
+  border-radius: 50%;
+  width: 60px;
+  height: 60px;
+  animation: spin 1s linear infinite;
+  margin: 30px auto;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.qr-code-container {
+  text-align: center;
+  margin: 30px 0;
+  padding: 20px;
+  background: rgba(255,255,255,0.1);
+  border-radius: 20px;
+  backdrop-filter: blur(10px);
+}
+
+.qr-code-container h3 {
+  font-size: 1.5rem;
+  margin-bottom: 20px;
+  color: #ffd700;
+  font-weight: 700;
+}
+
+#qrcode {
+  display: inline-block;
+  padding: 20px;
+  background: white;
+  border-radius: 15px;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+  margin: 10px 0;
+}
+
+.qr-instruction {
+  margin-top: 15px;
+  font-size: 1.1rem;
+  opacity: 0.9;
+  font-weight: 600;
+}
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="header">
+    <h1>🎮 Quiz Game Host</h1>
+  </div>
+
+  <div class="room-section">
+    <h2 style="text-align: center; margin-bottom: 20px; font-size: 1.8rem;">Room Code</h2>
+    <div class="room-code-display" id="roomCodeDisplay">----</div>
+    <div class="input-group" style="text-align: center;">
+      <input type="text" id="roomCodeInput" placeholder="Room Code" maxlength="4">
+      <button class="btn btn-primary" onclick="generateRoomCode()">Generate Code</button>
+    </div>
+    <div class="qr-code-container" id="qrCodeContainer" style="display: none;">
+      <h3>📱 Scan to Join</h3>
+      <div id="qrcode"></div>
+      <div class="qr-instruction">Scan this QR code with your phone to join the game!</div>
+    </div>
+  </div>
+
+  <div id="gameSection" class="hidden">
+    <div class="question-display" id="questionDisplay">
+      Click "Start Game" to begin!
+    </div>
+
+    <div class="timer-display" id="timerDisplay">30</div>
+
+    <div class="answers-grid" id="answersGrid"></div>
+
+    <div class="control-buttons">
+      <button class="btn btn-success" onclick="nextQuestion()">Next Question</button>
+      <button class="btn btn-danger" onclick="endGame()">End Game</button>
+    </div>
+
+    <div class="stats-display">
+      <div class="stat-card">
+        <div class="stat-label">Current Question</div>
+        <div class="stat-value" id="currentQuestionNum">0</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Total Players</div>
+        <div class="stat-value" id="totalPlayers">0</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Answered</div>
+        <div class="stat-value" id="answeredCount">0</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="players-list" id="playersList">
+    <h2>Players</h2>
+    <div id="playersContainer">No players yet...</div>
+  </div>
+</div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+import { getDatabase, ref, set, get, onValue, push, update } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyA3s_qYIn5BzRmbZIJtg3nYucZ1428hefg",
+  authDomain: "quiz-seminar.firebaseapp.com",
+  databaseURL: "https://quiz-seminar-default-rtdb.asia-southeast1.firebasedatabase.app",
+  projectId: "quiz-seminar",
+  storageBucket: "quiz-seminar.firebasestorage.app",
+  messagingSenderId: "251709040357",
+  appId: "1:251709040357:web:75bb059b1d89b9ec0fd60c",
+  measurementId: "G-T0GT06PX3N"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getDatabase();
+
+let currentRoomCode = '';
+let currentQuestionIndex = 0;
+let timerInterval = null;
+let timeLeft = 30;
+
+const questions = [
+  {
+    question: "What is the capital of France?",
+    answers: ["London", "Berlin", "Paris", "Madrid"],
+    correct: 2
+  },
+  {
+    question: "Which planet is known as the Red Planet?",
+    answers: ["Venus", "Mars", "Jupiter", "Saturn"],
+    correct: 1
+  },
+  {
+    question: "What is 2 + 2?",
+    answers: ["3", "4", "5", "6"],
+    correct: 1
+  },
+  {
+    question: "Who painted the Mona Lisa?",
+    answers: ["Van Gogh", "Picasso", "Da Vinci", "Monet"],
+    correct: 2
+  },
+  {
+    question: "What is the largest ocean?",
+    answers: ["Atlantic", "Indian", "Arctic", "Pacific"],
+    correct: 3
+  }
+];
+
+function generateRoomCode() {
+  const code = Math.floor(1000 + Math.random() * 9000).toString();
+  currentRoomCode = code;
+  document.getElementById('roomCodeInput').value = code;
+  document.getElementById('roomCodeDisplay').textContent = code;
+  
+  // Generate QR code
+  generateQRCode(code);
+  
+  // Initialize room in Firebase
+  set(ref(db, `rooms/${code}`), {
+    code: code,
+    status: 'waiting',
+    currentQuestion: 0,
+    players: {},
+    questionData: null,
+    timer: 30
+  });
+  
+  // Listen for players
+  const playersRef = ref(db, `rooms/${code}/players`);
+  onValue(playersRef, (snapshot) => {
+    updatePlayersList(snapshot.val());
+  });
+  
+  document.getElementById('gameSection').classList.remove('hidden');
+}
+
+function generateQRCode(roomCode) {
+  // Get the current URL and construct player.html URL
+  const currentUrl = window.location.href;
+  const baseUrl = currentUrl.substring(0, currentUrl.lastIndexOf('/') + 1);
+  const playerUrl = baseUrl + 'player.html';
+  
+  // Clear previous QR code
+  const qrContainer = document.getElementById('qrcode');
+  qrContainer.innerHTML = '';
+  
+  // Show QR code container
+  document.getElementById('qrCodeContainer').style.display = 'block';
+  
+  // Use QR code API service (more reliable, no library needed)
+  const encodedUrl = encodeURIComponent(playerUrl);
+  // Using QR Server API with dark green color to match theme
+  const qrApiUrl = `https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodedUrl}&color=0d4a2c&bgcolor=ffffff&margin=1`;
+  
+  // Create and display QR code image
+  const qrImage = document.createElement('img');
+  qrImage.src = qrApiUrl;
+  qrImage.alt = 'QR Code to join game';
+  qrImage.style.cssText = 'max-width: 100%; height: auto; border-radius: 10px; display: block; margin: 0 auto;';
+  qrImage.onerror = function() {
+    qrContainer.innerHTML = '<p style="color: #ff6b6b;">Error loading QR code. Please check your connection.</p>';
+  };
+  qrContainer.appendChild(qrImage);
+}
+
+function updatePlayersList(players) {
+  const container = document.getElementById('playersContainer');
+  const totalPlayersEl = document.getElementById('totalPlayers');
+  
+  if (!players || Object.keys(players).length === 0) {
+    container.innerHTML = 'No players yet...';
+    totalPlayersEl.textContent = '0';
+    return;
+  }
+  
+  totalPlayersEl.textContent = Object.keys(players).length;
+  container.innerHTML = '';
+  
+  const sortedPlayers = Object.entries(players)
+    .sort((a, b) => (b[1].score || 0) - (a[1].score || 0));
+  
+  sortedPlayers.forEach(([id, player]) => {
+    const playerDiv = document.createElement('div');
+    playerDiv.className = 'player-item fade-in';
+    playerDiv.innerHTML = `
+      <span class="player-name">${player.name || 'Player'}</span>
+      <span class="player-score">${player.score || 0} pts</span>
+    `;
+    container.appendChild(playerDiv);
+  });
+}
+
+function startQuestion() {
+  if (currentQuestionIndex >= questions.length) {
+    endGame();
+    return;
+  }
+  
+  const question = questions[currentQuestionIndex];
+  document.getElementById('currentQuestionNum').textContent = currentQuestionIndex + 1;
+  document.getElementById('questionDisplay').textContent = question.question;
+  
+  // Display answer buttons
+  const answersGrid = document.getElementById('answersGrid');
+  answersGrid.innerHTML = '';
+  
+  const colors = ['red', 'blue', 'yellow', 'green'];
+  question.answers.forEach((answer, index) => {
+    const btn = document.createElement('button');
+    btn.className = `answer-btn ${colors[index]}`;
+    btn.textContent = answer;
+    btn.onclick = () => selectAnswer(index);
+    answersGrid.appendChild(btn);
+  });
+  
+  // Update Firebase
+  set(ref(db, `rooms/${currentRoomCode}`), {
+    code: currentRoomCode,
+    status: 'question',
+    currentQuestion: currentQuestionIndex,
+    questionData: {
+      question: question.question,
+      answers: question.answers,
+      correct: question.correct
+    },
+    timer: 30
+  });
+  
+  // Reset timer
+  timeLeft = 30;
+  startTimer();
+}
+
+function selectAnswer(answerIndex) {
+  const question = questions[currentQuestionIndex];
+  const buttons = document.querySelectorAll('.answer-btn');
+  
+  buttons.forEach((btn, index) => {
+    btn.classList.remove('selected');
+    if (index === answerIndex) {
+      btn.classList.add('selected');
+    }
+  });
+}
+
+function startTimer() {
+  if (timerInterval) clearInterval(timerInterval);
+  
+  timerInterval = setInterval(() => {
+    timeLeft--;
+    document.getElementById('timerDisplay').textContent = timeLeft;
+    
+    if (timeLeft <= 10) {
+      document.getElementById('timerDisplay').classList.add('timer-warning');
+    }
+    
+    // Update Firebase timer
+    update(ref(db, `rooms/${currentRoomCode}`), { timer: timeLeft });
+    
+    if (timeLeft <= 0) {
+      clearInterval(timerInterval);
+      showResults();
+    }
+  }, 1000);
+}
+
+function showResults() {
+  const question = questions[currentQuestionIndex];
+  const buttons = document.querySelectorAll('.answer-btn');
+  
+  buttons.forEach((btn, index) => {
+    if (index === question.correct) {
+      btn.style.boxShadow = '0 0 40px rgba(255, 215, 0, 0.8)';
+      btn.style.border = '5px solid #ffd700';
+    } else {
+      btn.style.opacity = '0.5';
+    }
+    btn.disabled = true;
+  });
+  
+  // Update status
+  update(ref(db, `rooms/${currentRoomCode}`), { status: 'results' });
+}
+
+function nextQuestion() {
+  if (timerInterval) clearInterval(timerInterval);
+  document.getElementById('timerDisplay').classList.remove('timer-warning');
+  
+  currentQuestionIndex++;
+  if (currentQuestionIndex < questions.length) {
+    startQuestion();
+  } else {
+    endGame();
+  }
+}
+
+function endGame() {
+  if (timerInterval) clearInterval(timerInterval);
+  document.getElementById('questionDisplay').textContent = 'Game Over!';
+  document.getElementById('answersGrid').innerHTML = '';
+  document.getElementById('timerDisplay').textContent = '0';
+  
+  update(ref(db, `rooms/${currentRoomCode}`), { status: 'ended' });
+}
+
+// Initialize
+document.getElementById('roomCodeInput').addEventListener('keypress', (e) => {
+  if (e.key === 'Enter') {
+    generateRoomCode();
+  }
+});
+
+// Auto-generate room code on page load
+window.addEventListener('DOMContentLoaded', () => {
+  generateRoomCode();
+});
+</script>
+</body>
+</html>
