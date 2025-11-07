@@ -20,12 +20,103 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
+  position: relative;
+}
+
+/* Motorsport Background Graphics */
+body::before {
+  content: '';
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-image: 
+    repeating-linear-gradient(45deg, transparent, transparent 10px, rgba(255,255,255,0.03) 10px, rgba(255,255,255,0.03) 20px),
+    repeating-linear-gradient(-45deg, transparent, transparent 10px, rgba(255,255,255,0.03) 10px, rgba(255,255,255,0.03) 20px);
+  pointer-events: none;
+  z-index: 0;
+}
+
+body::after {
+  content: '';
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: 
+    radial-gradient(circle at 20% 50%, rgba(255,215,0,0.1) 0%, transparent 50%),
+    radial-gradient(circle at 80% 50%, rgba(255,215,0,0.1) 0%, transparent 50%);
+  pointer-events: none;
+  z-index: 0;
 }
 
 .container {
   width: 100%;
   max-width: 600px;
   padding: 20px;
+  position: relative;
+  z-index: 1;
+}
+
+/* Racing Flag Graphics */
+.racing-flag {
+  position: fixed;
+  top: 20px;
+  left: 20px;
+  width: 60px;
+  height: 60px;
+  background: 
+    repeating-linear-gradient(45deg, #000 0%, #000 25%, #fff 25%, #fff 50%);
+  border: 3px solid #ffd700;
+  border-radius: 5px;
+  z-index: 1000;
+  animation: flagWave 2s ease-in-out infinite;
+  box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+}
+
+@keyframes flagWave {
+  0%, 100% { transform: rotate(-5deg); }
+  50% { transform: rotate(5deg); }
+}
+
+/* Speed Lines */
+.speed-lines {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 0;
+  opacity: 0.1;
+}
+
+.speed-lines::before,
+.speed-lines::after {
+  content: '';
+  position: absolute;
+  width: 2px;
+  height: 100%;
+  background: linear-gradient(to bottom, transparent, #ffd700, transparent);
+  animation: speedLine 3s linear infinite;
+}
+
+.speed-lines::before {
+  left: 20%;
+  animation-delay: 0s;
+}
+
+.speed-lines::after {
+  left: 80%;
+  animation-delay: 1.5s;
+}
+
+@keyframes speedLine {
+  0% { transform: translateY(-100%); opacity: 0; }
+  50% { opacity: 1; }
+  100% { transform: translateY(100vh); opacity: 0; }
 }
 
 .join-screen {
@@ -35,6 +126,24 @@ body {
   border-radius: 30px;
   padding: 60px 40px;
   box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+  animation: slideInUp 0.6s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.join-screen::before {
+  content: '🏁';
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  font-size: 3rem;
+  opacity: 0.3;
+  animation: rotate 3s linear infinite;
+}
+
+@keyframes rotate {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
 }
 
 .join-screen h1 {
@@ -43,6 +152,28 @@ body {
   margin-bottom: 30px;
   text-shadow: 3px 3px 0px rgba(0,0,0,0.3);
   letter-spacing: -2px;
+  animation: scaleIn 0.8s ease 0.2s both;
+  position: relative;
+}
+
+.join-screen h1::before {
+  content: '🏁';
+  position: absolute;
+  left: -60px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 2.5rem;
+  animation: flagWave 2s ease-in-out infinite;
+}
+
+.join-screen h1::after {
+  content: '🏁';
+  position: absolute;
+  right: -60px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 2.5rem;
+  animation: flagWave 2s ease-in-out infinite;
 }
 
 .input-group {
@@ -60,6 +191,18 @@ body {
   margin: 10px 0;
   box-shadow: 0 6px 20px rgba(0,0,0,0.3);
   font-weight: 700;
+  transition: all 0.3s ease;
+  animation: slideInLeft 0.5s ease both;
+}
+
+.input-group input:focus {
+  transform: scale(1.05);
+  box-shadow: 0 8px 30px rgba(255, 215, 0, 0.4);
+  outline: none;
+}
+
+.input-group input:nth-child(2) {
+  animation-delay: 0.1s;
 }
 
 .input-group input#playerNameInput {
@@ -78,13 +221,34 @@ body {
   font-size: 1.3rem;
   font-weight: 700;
   cursor: pointer;
-  transition: all 0.3s ease;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   box-shadow: 0 6px 20px rgba(0,0,0,0.3);
   text-transform: uppercase;
   letter-spacing: 2px;
   margin: 10px;
   width: 100%;
   max-width: 300px;
+  animation: slideInUp 0.6s ease 0.3s both;
+  position: relative;
+  overflow: hidden;
+}
+
+.btn::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 0;
+  height: 0;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.3);
+  transform: translate(-50%, -50%);
+  transition: width 0.6s, height 0.6s;
+}
+
+.btn:active::before {
+  width: 300px;
+  height: 300px;
 }
 
 .btn-primary {
@@ -121,6 +285,11 @@ body {
   border-radius: 30px;
   padding: 60px 40px;
   box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+  animation: fadeIn 0.5s ease;
+}
+
+.waiting-screen h2 {
+  animation: pulse 2s ease-in-out infinite;
 }
 
 .waiting-screen h2 {
@@ -169,6 +338,7 @@ body {
   margin: 30px 0;
   text-shadow: 4px 4px 0px rgba(0,0,0,0.3);
   transition: all 0.3s ease;
+  animation: numberCount 0.3s ease;
 }
 
 .timer-warning {
@@ -203,7 +373,7 @@ body {
   font-size: 5rem;
   font-weight: 900;
   cursor: pointer;
-  transition: all 0.3s ease;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   box-shadow: 0 6px 20px rgba(0,0,0,0.3);
   text-transform: uppercase;
   letter-spacing: 3px;
@@ -216,7 +386,13 @@ body {
   justify-content: center;
   touch-action: manipulation;
   -webkit-tap-highlight-color: transparent;
+  animation: slideInUp 0.5s ease both;
 }
+
+.answer-btn:nth-child(1) { animation-delay: 0.1s; }
+.answer-btn:nth-child(2) { animation-delay: 0.2s; }
+.answer-btn:nth-child(3) { animation-delay: 0.3s; }
+.answer-btn:nth-child(4) { animation-delay: 0.4s; }
 
 .answer-btn:hover:not(:disabled) {
   transform: translateY(-8px) scale(1.05);
@@ -237,6 +413,19 @@ body {
   background: linear-gradient(135deg, #ff4757, #ff3838);
   color: white;
   box-shadow: 0 6px 20px rgba(255, 71, 87, 0.4);
+  position: relative;
+  overflow: hidden;
+}
+
+.answer-btn.red::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+  animation: racingStripe 2s linear infinite;
 }
 
 .answer-btn.blue { 
@@ -261,6 +450,17 @@ body {
   transform: scale(1.05);
   box-shadow: 0 0 40px rgba(255,255,255,0.6);
   border: 5px solid white;
+  animation: buttonPop 0.4s ease, glow 2s ease-in-out infinite;
+  position: relative;
+}
+
+.answer-btn.selected::after {
+  content: '🏁';
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  font-size: 2rem;
+  animation: celebrate 1s ease infinite;
 }
 
 .answer-btn.correct {
@@ -311,6 +511,11 @@ body {
   font-size: 1.5rem;
   font-weight: 900;
   color: #ffd700;
+  transition: all 0.3s ease;
+}
+
+.player-score.updated {
+  animation: numberCount 0.5s ease, glow 1s ease;
 }
 
 .feedback-screen {
@@ -325,7 +530,32 @@ body {
 .feedback-icon {
   font-size: 6rem;
   margin: 20px 0;
-  animation: bounce 0.6s ease;
+  animation: celebrate 1s ease, glow 2s ease-in-out infinite;
+  position: relative;
+}
+
+.feedback-icon::before {
+  content: '🏆';
+  position: absolute;
+  top: -20px;
+  left: -20px;
+  font-size: 3rem;
+  opacity: 0.5;
+  animation: celebrate 2s ease infinite;
+}
+
+.feedback-icon::after {
+  content: '🏁';
+  position: absolute;
+  bottom: -20px;
+  right: -20px;
+  font-size: 3rem;
+  opacity: 0.5;
+  animation: rotate 3s linear infinite;
+}
+
+.feedback-screen {
+  animation: scaleIn 0.5s ease;
 }
 
 @keyframes bounce {
@@ -400,6 +630,110 @@ body {
   to { opacity: 1; transform: translateY(0); }
 }
 
+@keyframes slideInUp {
+  from { 
+    opacity: 0; 
+    transform: translateY(50px) scale(0.9); 
+  }
+  to { 
+    opacity: 1; 
+    transform: translateY(0) scale(1); 
+  }
+}
+
+@keyframes slideInDown {
+  from { 
+    opacity: 0; 
+    transform: translateY(-50px) scale(0.9); 
+  }
+  to { 
+    opacity: 1; 
+    transform: translateY(0) scale(1); 
+  }
+}
+
+@keyframes slideInLeft {
+  from { 
+    opacity: 0; 
+    transform: translateX(-100px); 
+  }
+  to { 
+    opacity: 1; 
+    transform: translateX(0); 
+  }
+}
+
+@keyframes slideInRight {
+  from { 
+    opacity: 0; 
+    transform: translateX(100px); 
+  }
+  to { 
+    opacity: 1; 
+    transform: translateX(0); 
+  }
+}
+
+@keyframes scaleIn {
+  from { 
+    opacity: 0; 
+    transform: scale(0.5); 
+  }
+  to { 
+    opacity: 1; 
+    transform: scale(1); 
+  }
+}
+
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  10%, 30%, 50%, 70%, 90% { transform: translateX(-10px); }
+  20%, 40%, 60%, 80% { transform: translateX(10px); }
+}
+
+@keyframes glow {
+  0%, 100% { 
+    box-shadow: 0 0 20px rgba(255, 215, 0, 0.5);
+  }
+  50% { 
+    box-shadow: 0 0 40px rgba(255, 215, 0, 0.8), 0 0 60px rgba(255, 215, 0, 0.6);
+  }
+}
+
+@keyframes celebrate {
+  0%, 100% { transform: scale(1) rotate(0deg); }
+  25% { transform: scale(1.2) rotate(-5deg); }
+  50% { transform: scale(1.3) rotate(5deg); }
+  75% { transform: scale(1.2) rotate(-5deg); }
+}
+
+@keyframes numberCount {
+  from { transform: scale(0.5); opacity: 0; }
+  to { transform: scale(1); opacity: 1; }
+}
+
+@keyframes buttonPop {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.1); }
+  100% { transform: scale(1); }
+}
+
+@keyframes ripple {
+  0% {
+    transform: scale(0);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(4);
+    opacity: 0;
+  }
+}
+
+@keyframes racingStripe {
+  0% { left: -100%; }
+  100% { left: 100%; }
+}
+
 .error-message {
   color: #ff6b6b;
   margin-top: 15px;
@@ -469,6 +803,10 @@ body {
     <div class="spinner"></div>
     <p style="margin-top: 20px; font-size: 1.2rem;">Get ready!</p>
   </div>
+
+  <!-- Motorsport Graphics -->
+  <div class="racing-flag"></div>
+  <div class="speed-lines"></div>
 
   <!-- Question Screen -->
   <div id="questionScreen" class="game-screen question-screen hidden">
@@ -610,10 +948,16 @@ function listenToGame() {
       return;
     }
     
-    // Update player score
+    // Update player score with animation
     if (roomData.players && roomData.players[playerId]) {
-      playerScore = roomData.players[playerId].score || 0;
-      document.getElementById('playerScoreDisplay').textContent = `${playerScore} pts`;
+      const newScore = roomData.players[playerId].score || 0;
+      if (newScore !== playerScore) {
+        playerScore = newScore;
+        const scoreEl = document.getElementById('playerScoreDisplay');
+        scoreEl.textContent = `${playerScore} pts`;
+        scoreEl.classList.add('updated');
+        setTimeout(() => scoreEl.classList.remove('updated'), 1000);
+      }
     }
     
     // Handle different game states
@@ -870,13 +1214,17 @@ function showFeedback(roomData) {
   document.getElementById('leaderboardScreen').classList.add('hidden');
   
   const question = roomData.questionData;
-  const playerData = roomData.players[playerId];
+  const playerData = roomData.players && roomData.players[playerId];
   
   // Check if answer is correct (compare answer index with correct index)
-  const isCorrect = playerData && 
+  // Add null checks for question and playerData, and ensure type consistency
+  const isCorrect = question && 
+                    playerData && 
                     playerData.answer !== null && 
                     playerData.answer !== undefined &&
-                    playerData.answer === question.correct;
+                    question.correct !== null &&
+                    question.correct !== undefined &&
+                    Number(playerData.answer) === Number(question.correct);
   
   // Get the player's updated score to calculate points earned
   const oldScore = playerScore;
@@ -886,7 +1234,7 @@ function showFeedback(roomData) {
   console.log('Feedback check:', {
     playerData,
     playerAnswer: playerData?.answer,
-    correctAnswer: question.correct,
+    correctAnswer: question?.correct,
     isCorrect,
     oldScore,
     newScore,
@@ -915,6 +1263,9 @@ function showFeedback(roomData) {
   
   // Highlight correct answer on question screen (for reference)
   setTimeout(() => {
+    if (!question || question.correct === null || question.correct === undefined) {
+      return; // Can't highlight if question data is missing
+    }
     const buttons = document.querySelectorAll('.answer-btn');
     buttons.forEach((btn, index) => {
       if (index === question.correct) {
