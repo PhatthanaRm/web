@@ -846,17 +846,39 @@ function showFeedback(roomData) {
   const question = roomData.questionData;
   const playerData = roomData.players[playerId];
   
+  // Check if answer is correct (compare answer index with correct index)
+  const isCorrect = playerData && 
+                    playerData.answer !== null && 
+                    playerData.answer !== undefined &&
+                    playerData.answer === question.correct;
+  
   // Get the player's updated score to calculate points earned
   const oldScore = playerScore;
   const newScore = playerData ? (playerData.score || 0) : 0;
   const pointsEarned = newScore - oldScore;
   
-  if (playerData && playerData.answer === question.correct && pointsEarned > 0) {
+  console.log('Feedback check:', {
+    playerData,
+    playerAnswer: playerData?.answer,
+    correctAnswer: question.correct,
+    isCorrect,
+    oldScore,
+    newScore,
+    pointsEarned
+  });
+  
+  if (isCorrect) {
     document.getElementById('feedbackIcon').textContent = '✓';
     document.getElementById('feedbackIcon').style.color = '#ffd700';
     document.getElementById('feedbackMessage').textContent = 'Correct!';
     document.getElementById('feedbackMessage').style.color = '#ffd700';
-    document.getElementById('feedbackScore').textContent = `+${pointsEarned} pts`;
+    
+    // Show points earned, or show "Calculating..." if score hasn't updated yet
+    if (pointsEarned > 0) {
+      document.getElementById('feedbackScore').textContent = `+${pointsEarned} pts`;
+    } else {
+      document.getElementById('feedbackScore').textContent = 'Correct! Points calculating...';
+    }
   } else {
     document.getElementById('feedbackIcon').textContent = '✗';
     document.getElementById('feedbackIcon').style.color = '#ff6b6b';
