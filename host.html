@@ -165,10 +165,29 @@ body {
   transform: translateY(0);
 }
 
-.answer-btn.red { background: linear-gradient(135deg, #ff6b6b, #ee5a6f); }
-.answer-btn.blue { background: linear-gradient(135deg, #2d7a4f, #1a5f3f); }
-.answer-btn.yellow { background: linear-gradient(135deg, #ffd700, #daa520); color: #0d4a2c; }
-.answer-btn.green { background: linear-gradient(135deg, #4a9d7a, #2d7a4f); }
+.answer-btn.red { 
+  background: linear-gradient(135deg, #ff4757, #ff3838);
+  color: white;
+  box-shadow: 0 6px 20px rgba(255, 71, 87, 0.4);
+}
+
+.answer-btn.blue { 
+  background: linear-gradient(135deg, #3742fa, #2f3542);
+  color: white;
+  box-shadow: 0 6px 20px rgba(55, 66, 250, 0.4);
+}
+
+.answer-btn.yellow { 
+  background: linear-gradient(135deg, #ffd32a, #ffa502);
+  color: #0d4a2c;
+  box-shadow: 0 6px 20px rgba(255, 211, 42, 0.4);
+}
+
+.answer-btn.green { 
+  background: linear-gradient(135deg, #2ed573, #1e90ff);
+  color: white;
+  box-shadow: 0 6px 20px rgba(46, 213, 115, 0.4);
+}
 
 .answer-btn.selected {
   transform: scale(1.05);
@@ -702,7 +721,8 @@ function startQuestion() {
     timer: 30
   });
   
-  // Reset all players' answered status
+  // Reset all players' answered status and store question start time
+  const questionStartTime = Date.now();
   const playersRef = ref(db, `rooms/${currentRoomCode}/players`);
   get(playersRef).then((snapshot) => {
     const players = snapshot.val() || {};
@@ -710,10 +730,17 @@ function startQuestion() {
     Object.keys(players).forEach(playerId => {
       updates[`${playerId}/answered`] = false;
       updates[`${playerId}/answer`] = null;
+      updates[`${playerId}/answerTime`] = null;
     });
     if (Object.keys(updates).length > 0) {
       update(playersRef, updates);
     }
+  });
+  
+  // Store question start time in room data
+  update(ref(db, `rooms/${currentRoomCode}`), { 
+    questionStartTime: questionStartTime,
+    totalTime: 30
   });
   
   timeLeft = 30;
@@ -766,22 +793,65 @@ function showResults() {
 
 function calculateScores() {
   const question = questions[currentQuestionIndex];
-  const playersRef = ref(db, `rooms/${currentRoomCode}/players`);
+  const roomRef = ref(db, `rooms/${currentRoomCode}`);
   
-  get(playersRef).then((snapshot) => {
-    const players = snapshot.val() || {};
-    const updates = {};
+  get(roomRef).then((roomSnapshot) => {
+    const roomData = roomSnapshot.val();
+    const questionStartTime = roomData.questionStartTime || Date.now();
     
-    Object.entries(players).forEach(([playerId, player]) => {
-      if (player.answered && player.answer === question.correct) {
-        const points = Math.max(100, timeLeft * 10);
-        updates[`${playerId}/score`] = (player.score || 0) + points;
+    const playersRef = ref(db, `rooms/${currentRoomCode}/players`);
+    get(playersRef).then((snapshot) => {
+      const players = snapshot.val() || {};
+      const updates = {};
+      
+      // Collect all correct answers with their answer times (who answered first)
+      const correctAnswers = [];
+      Object.entries(players).forEach(([playerId, player]) => {
+        if (player.answered && player.answer === question.correct && player.answerTime) {
+          correctAnswers.push({ 
+            playerId, 
+            answerTime: player.answerTime 
+          });
+        }
+      });
+      
+      // Sort by answer time (first to answer = earliest timestamp)
+      correctAnswers.sort((a, b) => a.answerTime - b.answerTime);
+      
+      // Calculate scores based on percentage of players who answered before you
+      // Score range: 975 (first) down to 650 (based on percentage)
+      const totalCorrect = correctAnswers.length;
+      const totalPlayers = Object.keys(players).length;
+      const maxScore = 975;
+      const minScore = 650;
+      const scoreRange = maxScore - minScore; // 325 points range
+      
+      correctAnswers.forEach((answer, index) => {
+        let points;
+        if (totalCorrect === 1) {
+          // Only one correct answer gets max score
+          points = maxScore;
+        } else {
+          // Calculate what percentage of correct answerers answered before this player
+          // index = 0 means 0% answered before (first), index = totalCorrect-1 means almost 100% answered before
+          const percentageBefore = index / totalCorrect; // 0.0 to 1.0 (0% to 100%)
+          
+          // Use percentage to calculate score loss
+          // First player (0%) gets maxScore, last player (100%) gets minScore
+          // The score decreases based on what percentage answered before you
+          points = Math.round(maxScore - (percentageBefore * scoreRange));
+          
+          // Ensure minimum score
+          points = Math.max(points, minScore);
+        }
+        
+        updates[`${answer.playerId}/score`] = (players[answer.playerId].score || 0) + points;
+      });
+      
+      if (Object.keys(updates).length > 0) {
+        update(playersRef, updates);
       }
     });
-    
-    if (Object.keys(updates).length > 0) {
-      update(playersRef, updates);
-    }
   });
 }
 
