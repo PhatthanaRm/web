@@ -189,19 +189,23 @@ body {
 }
 
 .answer-btn {
-  padding: 30px;
+  padding: 50px 30px;
   border: none;
-  border-radius: 20px;
-  font-size: 1.8rem;
-  font-weight: 700;
+  border-radius: 25px;
+  font-size: 4rem;
+  font-weight: 900;
   cursor: pointer;
   transition: all 0.3s ease;
   box-shadow: 0 6px 20px rgba(0,0,0,0.3);
   text-transform: uppercase;
-  letter-spacing: 1px;
+  letter-spacing: 2px;
   position: relative;
   overflow: hidden;
   width: 100%;
+  min-height: 150px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .answer-btn:hover:not(:disabled) {
@@ -458,14 +462,11 @@ body {
 
   <!-- Question Screen -->
   <div id="questionScreen" class="game-screen question-screen hidden">
-    <div class="question-number" id="questionNumber">Question 1 / 5</div>
     <div class="player-info">
       <div class="player-name" id="playerNameDisplay">Player</div>
       <div class="player-score" id="playerScoreDisplay">0 pts</div>
     </div>
 
-    <div class="question-display" id="questionDisplay">Loading question...</div>
-    
     <div class="timer-display" id="timerDisplay">30</div>
 
     <div class="answers-container" id="answersContainer"></div>
@@ -639,22 +640,21 @@ function showQuestion(roomData) {
   document.getElementById('leaderboardScreen').classList.add('hidden');
   
   const question = roomData.questionData;
-  const currentQ = roomData.currentQuestion + 1;
-  document.getElementById('questionNumber').textContent = `Question ${currentQ} / ${totalQuestions}`;
-  document.getElementById('questionDisplay').textContent = question.question;
   
-  // Create answer buttons
+  // Create answer buttons - only show buttons, no question text
   const container = document.getElementById('answersContainer');
   container.innerHTML = '';
   
   const colors = ['red', 'blue', 'yellow', 'green'];
+  const labels = ['A', 'B', 'C', 'D'];
   question.answers.forEach((answer, index) => {
     const btn = document.createElement('button');
     btn.className = `answer-btn ${colors[index]}`;
-    btn.textContent = answer;
-    btn.disabled = false; // Ensure button is enabled
-    btn.style.pointerEvents = 'auto'; // Ensure clicks work
-    btn.style.cursor = 'pointer'; // Show pointer cursor
+    btn.textContent = `${labels[index]}`;
+    btn.dataset.answerIndex = index;
+    btn.disabled = false;
+    btn.style.pointerEvents = 'auto';
+    btn.style.cursor = 'pointer';
     btn.addEventListener('click', function() {
       selectAnswer(index, question.correct);
     });
@@ -674,6 +674,11 @@ function selectAnswer(answerIndex, correctIndex) {
     btn.disabled = true;
     if (index === answerIndex) {
       btn.classList.add('selected');
+      btn.textContent = '✓ ANSWERED';
+      btn.style.fontSize = '1.5rem';
+      btn.style.fontWeight = '900';
+    } else {
+      btn.style.opacity = '0.5';
     }
   });
   
