@@ -205,8 +205,9 @@ body {
 }
 
 .answer-btn:hover:not(:disabled) {
-  transform: translateY(-5px) scale(1.02);
-  box-shadow: 0 10px 30px rgba(0,0,0,0.4);
+  transform: translateY(-8px) scale(1.05);
+  box-shadow: 0 15px 40px rgba(0,0,0,0.5);
+  filter: brightness(1.1);
 }
 
 .answer-btn:active:not(:disabled) {
@@ -219,23 +220,27 @@ body {
 }
 
 .answer-btn.red { 
-  background: linear-gradient(135deg, #ff6b6b, #ee5a6f);
+  background: linear-gradient(135deg, #ff4757, #ff3838);
   color: white;
+  box-shadow: 0 6px 20px rgba(255, 71, 87, 0.4);
 }
 
 .answer-btn.blue { 
-  background: linear-gradient(135deg, #2d7a4f, #1a5f3f);
+  background: linear-gradient(135deg, #3742fa, #2f3542);
   color: white;
+  box-shadow: 0 6px 20px rgba(55, 66, 250, 0.4);
 }
 
 .answer-btn.yellow { 
-  background: linear-gradient(135deg, #ffd700, #daa520);
+  background: linear-gradient(135deg, #ffd32a, #ffa502);
   color: #0d4a2c;
+  box-shadow: 0 6px 20px rgba(255, 211, 42, 0.4);
 }
 
 .answer-btn.green { 
-  background: linear-gradient(135deg, #4a9d7a, #2d7a4f);
+  background: linear-gradient(135deg, #2ed573, #1e90ff);
   color: white;
+  box-shadow: 0 6px 20px rgba(46, 213, 115, 0.4);
 }
 
 .answer-btn.selected {
@@ -647,7 +652,12 @@ function showQuestion(roomData) {
     const btn = document.createElement('button');
     btn.className = `answer-btn ${colors[index]}`;
     btn.textContent = answer;
-    btn.onclick = () => selectAnswer(index, question.correct);
+    btn.disabled = false; // Ensure button is enabled
+    btn.style.pointerEvents = 'auto'; // Ensure clicks work
+    btn.style.cursor = 'pointer'; // Show pointer cursor
+    btn.addEventListener('click', function() {
+      selectAnswer(index, question.correct);
+    });
     container.appendChild(btn);
   });
   
