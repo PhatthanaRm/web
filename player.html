@@ -707,30 +707,46 @@ function showQuestion(roomData) {
     const answerIndex = index;
     const correctIndex = question.correct;
     
-    // Direct onclick handler - simpler and more reliable
+    // Direct onclick handler - check if already answered first
     btn.onclick = function(e) {
       e.preventDefault();
       e.stopPropagation();
       e.stopImmediatePropagation();
+      
+      // Double check - if already answered, do nothing
+      if (currentAnswer !== null || btn.disabled) {
+        console.log('Button already disabled or answered');
+        return false;
+      }
+      
       console.log('Button clicked:', answerIndex, 'Current answer:', currentAnswer, 'Room:', roomCode, 'Player:', playerId);
-      if (currentAnswer === null && roomCode && playerId) {
+      if (roomCode && playerId) {
         selectAnswer(answerIndex, correctIndex);
       } else {
-        console.warn('Cannot answer:', { currentAnswer, roomCode, playerId });
+        console.warn('Cannot answer:', { roomCode, playerId });
       }
       return false;
     };
     
-    // Also add touch support
+    // Touch support
     btn.ontouchstart = function(e) {
-      e.preventDefault();
+      if (currentAnswer !== null || btn.disabled) {
+        e.preventDefault();
+        return false;
+      }
     };
     
     btn.ontouchend = function(e) {
       e.preventDefault();
       e.stopPropagation();
+      
+      // Double check - if already answered, do nothing
+      if (currentAnswer !== null || btn.disabled) {
+        return false;
+      }
+      
       console.log('Button touched:', answerIndex, 'Current answer:', currentAnswer);
-      if (currentAnswer === null && roomCode && playerId) {
+      if (roomCode && playerId) {
         selectAnswer(answerIndex, correctIndex);
       }
       return false;
@@ -760,26 +776,36 @@ function selectAnswer(answerIndex, correctIndex) {
     return;
   }
   
+  // Set answer immediately to prevent double-clicks
   currentAnswer = answerIndex;
   const buttons = document.querySelectorAll('.answer-btn');
   
-  // Lock all buttons immediately and show "ANSWERED" on selected button
+  // Lock all buttons IMMEDIATELY - before any async operations
   buttons.forEach((btn, index) => {
+    // Disable button completely
     btn.disabled = true;
     btn.style.pointerEvents = 'none';
     btn.style.cursor = 'not-allowed';
     
+    // Remove all event handlers to prevent any clicks
+    btn.onclick = null;
+    btn.ontouchstart = null;
+    btn.ontouchend = null;
+    
     if (index === answerIndex) {
-      // Selected button shows "ANSWERED"
+      // Selected button shows "ANSWERED" prominently
       btn.classList.add('selected');
-      btn.innerHTML = '✓<br>ANSWERED';
-      btn.style.fontSize = '2.5rem';
+      btn.innerHTML = '<div style="font-size: 3rem; margin-bottom: 10px;">✓</div><div style="font-size: 2rem; font-weight: 900;">ANSWERED</div>';
+      btn.style.fontSize = '2rem';
       btn.style.fontWeight = '900';
       btn.style.opacity = '1';
-      btn.style.lineHeight = '1.2';
+      btn.style.lineHeight = '1.3';
+      btn.style.border = '4px solid white';
+      btn.style.boxShadow = '0 0 30px rgba(255, 255, 255, 0.8)';
     } else {
-      // Other buttons fade out
-      btn.style.opacity = '0.4';
+      // Other buttons fade out completely
+      btn.style.opacity = '0.3';
+      btn.style.filter = 'grayscale(100%)';
     }
   });
   
