@@ -820,8 +820,8 @@ function calculateScores() {
       
       // Calculate scores based on percentage of players who answered before you
       // Score range: 975 (first) down to 650 (based on percentage)
+      // This system scales to 200+ players efficiently
       const totalCorrect = correctAnswers.length;
-      const totalPlayers = Object.keys(players).length;
       const maxScore = 975;
       const minScore = 650;
       const scoreRange = maxScore - minScore; // 325 points range
@@ -834,14 +834,15 @@ function calculateScores() {
         } else {
           // Calculate what percentage of correct answerers answered before this player
           // index = 0 means 0% answered before (first), index = totalCorrect-1 means almost 100% answered before
-          const percentageBefore = index / totalCorrect; // 0.0 to 1.0 (0% to 100%)
+          // Works for any number of players: 2, 10, 50, 200, 500+
+          const percentageBefore = index / (totalCorrect - 1); // 0.0 to 1.0 (0% to 100%)
           
           // Use percentage to calculate score loss
           // First player (0%) gets maxScore, last player (100%) gets minScore
-          // The score decreases based on what percentage answered before you
+          // Linear distribution: scales perfectly for 200+ players
           points = Math.round(maxScore - (percentageBefore * scoreRange));
           
-          // Ensure minimum score
+          // Ensure minimum score (safety check)
           points = Math.max(points, minScore);
         }
         
