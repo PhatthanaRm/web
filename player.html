@@ -195,23 +195,25 @@ body {
 }
 
 .answer-btn {
-  padding: 50px 30px;
+  padding: 80px 40px;
   border: none;
-  border-radius: 25px;
-  font-size: 4rem;
+  border-radius: 30px;
+  font-size: 5rem;
   font-weight: 900;
   cursor: pointer;
   transition: all 0.3s ease;
   box-shadow: 0 6px 20px rgba(0,0,0,0.3);
   text-transform: uppercase;
-  letter-spacing: 2px;
+  letter-spacing: 3px;
   position: relative;
   overflow: hidden;
   width: 100%;
-  min-height: 150px;
+  min-height: 200px;
   display: flex;
   align-items: center;
   justify-content: center;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
 }
 
 .answer-btn:hover:not(:disabled) {
@@ -658,14 +660,26 @@ function showQuestion(roomData) {
     btn.className = `answer-btn ${colors[index]}`;
     btn.textContent = `${labels[index]}`;
     btn.dataset.answerIndex = index;
+    btn.type = 'button'; // Ensure it's a button, not submit
     btn.disabled = false;
     btn.style.pointerEvents = 'auto';
     btn.style.cursor = 'pointer';
-    btn.style.opacity = '1'; // Reset opacity
-    btn.classList.remove('selected'); // Remove selected class
-    btn.addEventListener('click', function() {
-      selectAnswer(index, question.correct);
-    });
+    btn.style.opacity = '1';
+    btn.style.userSelect = 'none';
+    btn.classList.remove('selected');
+    
+    // Use both click and touch events for better mobile support
+    const handleAnswer = function(e) {
+      e.preventDefault();
+      e.stopPropagation();
+      if (!btn.disabled && currentAnswer === null) {
+        selectAnswer(index, question.correct);
+      }
+    };
+    
+    btn.addEventListener('click', handleAnswer);
+    btn.addEventListener('touchend', handleAnswer);
+    
     container.appendChild(btn);
   });
   
@@ -678,19 +692,22 @@ function selectAnswer(answerIndex, correctIndex) {
   currentAnswer = answerIndex;
   const buttons = document.querySelectorAll('.answer-btn');
   
-  // Lock all buttons immediately
+  // Lock all buttons immediately and show "ANSWERED" on selected button
   buttons.forEach((btn, index) => {
     btn.disabled = true;
-    btn.style.pointerEvents = 'none'; // Prevent any clicks
+    btn.style.pointerEvents = 'none';
     btn.style.cursor = 'not-allowed';
     
     if (index === answerIndex) {
+      // Selected button shows "ANSWERED"
       btn.classList.add('selected');
-      btn.textContent = '✓ ANSWERED';
-      btn.style.fontSize = '1.5rem';
+      btn.innerHTML = '✓<br>ANSWERED';
+      btn.style.fontSize = '2.5rem';
       btn.style.fontWeight = '900';
       btn.style.opacity = '1';
+      btn.style.lineHeight = '1.2';
     } else {
+      // Other buttons fade out
       btn.style.opacity = '0.4';
     }
   });
@@ -702,6 +719,8 @@ function selectAnswer(answerIndex, correctIndex) {
     answered: true,
     answer: answerIndex,
     answerTime: answerTime
+  }).catch(error => {
+    console.error('Error sending answer:', error);
   });
 }
 
