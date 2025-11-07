@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="th">
+<html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Kahoot-Style Quiz - Player</title>
+<title>Quiz Game Player - Production Ready</title>
 <style>
 * {
   margin: 0;
@@ -12,7 +12,7 @@
 }
 
 body {
-  font-family: 'Montserrat', 'Nunito', sans-serif;
+  font-family: 'Montserrat', 'Nunito', -apple-system, BlinkMacSystemFont, sans-serif;
   background: linear-gradient(135deg, #0d4a2c 0%, #1a5f3f 100%);
   color: white;
   min-height: 100vh;
@@ -60,7 +60,15 @@ body {
   margin: 10px 0;
   box-shadow: 0 6px 20px rgba(0,0,0,0.3);
   font-weight: 700;
-  letter-spacing: 5px;
+}
+
+.input-group input#playerNameInput {
+  letter-spacing: 2px;
+}
+
+.input-group input#roomCodeInput {
+  letter-spacing: 10px;
+  font-size: 2rem;
 }
 
 .btn {
@@ -84,13 +92,18 @@ body {
   color: #0d4a2c;
 }
 
-.btn:hover {
+.btn:hover:not(:disabled) {
   transform: translateY(-5px);
   box-shadow: 0 10px 30px rgba(0,0,0,0.4);
 }
 
-.btn:active {
+.btn:active:not(:disabled) {
   transform: translateY(0);
+}
+
+.btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 
 .game-screen {
@@ -252,6 +265,17 @@ body {
   border-radius: 15px;
   padding: 15px 25px;
   box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+  z-index: 100;
+}
+
+@media (max-width: 768px) {
+  .player-info {
+    position: relative;
+    top: 0;
+    right: 0;
+    margin-bottom: 20px;
+    text-align: center;
+  }
 }
 
 .player-name {
@@ -299,6 +323,47 @@ body {
   margin: 20px 0;
 }
 
+.leaderboard-screen {
+  text-align: center;
+  background: rgba(255,255,255,0.15);
+  backdrop-filter: blur(10px);
+  border-radius: 30px;
+  padding: 60px 40px;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+}
+
+.leaderboard-screen h2 {
+  font-size: 2.5rem;
+  margin-bottom: 30px;
+  color: #ffd700;
+}
+
+.leaderboard-item {
+  background: rgba(255,255,255,0.2);
+  padding: 20px;
+  margin: 15px 0;
+  border-radius: 15px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  transition: all 0.3s ease;
+}
+
+.leaderboard-item.rank-1 {
+  background: linear-gradient(135deg, rgba(255,215,0,0.3), rgba(255,215,0,0.2));
+  border: 2px solid #ffd700;
+}
+
+.leaderboard-item.rank-2 {
+  background: linear-gradient(135deg, rgba(192,192,192,0.3), rgba(192,192,192,0.2));
+  border: 2px solid #c0c0c0;
+}
+
+.leaderboard-item.rank-3 {
+  background: linear-gradient(135deg, rgba(205,127,50,0.3), rgba(205,127,50,0.2));
+  border: 2px solid #cd7f32;
+}
+
 .hidden {
   display: none;
 }
@@ -317,17 +382,59 @@ body {
   margin-top: 15px;
   font-size: 1.1rem;
   font-weight: 600;
+  min-height: 25px;
+}
+
+.connection-status {
+  position: fixed;
+  top: 20px;
+  left: 20px;
+  padding: 10px 20px;
+  border-radius: 25px;
+  font-weight: 600;
+  z-index: 1000;
+  transition: all 0.3s ease;
+  font-size: 0.9rem;
+}
+
+.connection-status.connected {
+  background: rgba(107, 207, 127, 0.8);
+}
+
+.connection-status.disconnected {
+  background: rgba(255, 107, 107, 0.8);
+  animation: blink 1s infinite;
+}
+
+@keyframes blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+.question-number {
+  position: fixed;
+  top: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(255,255,255,0.2);
+  backdrop-filter: blur(10px);
+  border-radius: 15px;
+  padding: 10px 20px;
+  font-weight: 700;
+  z-index: 100;
 }
 </style>
 </head>
 <body>
+<div class="connection-status connected" id="connectionStatus">● Connected</div>
+
 <div class="container">
   <!-- Join Screen -->
   <div id="joinScreen" class="join-screen fade-in">
     <h1>🎮 Join Game</h1>
     <div class="input-group">
       <input type="text" id="playerNameInput" placeholder="Enter Your Name" maxlength="20">
-      <input type="text" id="roomCodeInput" placeholder="Room Code" maxlength="4" style="letter-spacing: 10px;">
+      <input type="text" id="roomCodeInput" placeholder="Room Code" maxlength="4">
     </div>
     <button class="btn btn-primary" id="joinButton">Join Game</button>
     <div id="errorMessage" class="error-message"></div>
@@ -342,6 +449,7 @@ body {
 
   <!-- Question Screen -->
   <div id="questionScreen" class="game-screen question-screen">
+    <div class="question-number" id="questionNumber">Question 1 / 5</div>
     <div class="player-info">
       <div class="player-name" id="playerNameDisplay">Player</div>
       <div class="player-score" id="playerScoreDisplay">0 pts</div>
@@ -359,6 +467,16 @@ body {
     <div class="feedback-icon" id="feedbackIcon">✓</div>
     <div class="feedback-message" id="feedbackMessage">Correct!</div>
     <div class="feedback-score" id="feedbackScore">+100 pts</div>
+  </div>
+
+  <!-- Final Leaderboard Screen -->
+  <div id="leaderboardScreen" class="game-screen leaderboard-screen">
+    <h2>🏆 Final Results</h2>
+    <div id="finalLeaderboard"></div>
+    <div style="margin-top: 30px;">
+      <p style="font-size: 1.2rem; margin-bottom: 20px;">Your Final Score</p>
+      <div class="feedback-score" id="finalScore">0 pts</div>
+    </div>
   </div>
 </div>
 
@@ -385,6 +503,21 @@ let playerName = '';
 let roomCode = '';
 let currentAnswer = null;
 let playerScore = 0;
+let totalQuestions = 5;
+
+// Connection status
+const connectionRef = ref(db, '.info/connected');
+onValue(connectionRef, (snapshot) => {
+  const connected = snapshot.val();
+  const statusEl = document.getElementById('connectionStatus');
+  if (connected) {
+    statusEl.textContent = '● Connected';
+    statusEl.className = 'connection-status connected';
+  } else {
+    statusEl.textContent = '● Disconnected';
+    statusEl.className = 'connection-status disconnected';
+  }
+});
 
 function joinRoom() {
   const name = document.getElementById('playerNameInput').value.trim();
@@ -409,7 +542,13 @@ function joinRoom() {
   const roomRef = ref(db, `rooms/${code}`);
   get(roomRef).then((snapshot) => {
     if (!snapshot.exists()) {
-      errorMsg.textContent = 'Room not found!';
+      errorMsg.textContent = 'Room not found! Please check the room code.';
+      return;
+    }
+    
+    const roomData = snapshot.val();
+    if (roomData.status === 'ended') {
+      errorMsg.textContent = 'This game has already ended.';
       return;
     }
     
@@ -434,7 +573,7 @@ function joinRoom() {
     // Listen for game updates
     listenToGame();
   }).catch((error) => {
-    errorMsg.textContent = 'Error connecting to room!';
+    errorMsg.textContent = 'Error connecting to room! Please try again.';
     console.error(error);
   });
 }
@@ -444,7 +583,10 @@ function listenToGame() {
   
   onValue(roomRef, (snapshot) => {
     const roomData = snapshot.val();
-    if (!roomData) return;
+    if (!roomData) {
+      showError('Room no longer exists.');
+      return;
+    }
     
     // Update player score
     if (roomData.players && roomData.players[playerId]) {
@@ -457,16 +599,17 @@ function listenToGame() {
       document.getElementById('waitingScreen').classList.remove('hidden');
       document.getElementById('questionScreen').classList.add('hidden');
       document.getElementById('feedbackScreen').classList.add('hidden');
+      document.getElementById('leaderboardScreen').classList.add('hidden');
     } else if (roomData.status === 'question' && roomData.questionData) {
       showQuestion(roomData);
     } else if (roomData.status === 'results') {
       showFeedback(roomData);
     } else if (roomData.status === 'ended') {
-      showEndGame();
+      showFinalLeaderboard(roomData);
     }
     
     // Update timer
-    if (roomData.timer !== undefined) {
+    if (roomData.timer !== undefined && roomData.status === 'question') {
       const timerEl = document.getElementById('timerDisplay');
       timerEl.textContent = roomData.timer;
       if (roomData.timer <= 10) {
@@ -482,8 +625,11 @@ function showQuestion(roomData) {
   document.getElementById('waitingScreen').classList.add('hidden');
   document.getElementById('questionScreen').classList.remove('hidden');
   document.getElementById('feedbackScreen').classList.add('hidden');
+  document.getElementById('leaderboardScreen').classList.add('hidden');
   
   const question = roomData.questionData;
+  const currentQ = roomData.currentQuestion + 1;
+  document.getElementById('questionNumber').textContent = `Question ${currentQ} / ${totalQuestions}`;
   document.getElementById('questionDisplay').textContent = question.question;
   
   // Create answer buttons
@@ -521,22 +667,12 @@ function selectAnswer(answerIndex, correctIndex) {
     answered: true,
     answer: answerIndex
   });
-  
-  // Calculate score based on time (simplified)
-  const timerEl = document.getElementById('timerDisplay');
-  const timeLeft = parseInt(timerEl.textContent);
-  let points = 0;
-  
-  if (answerIndex === correctIndex) {
-    points = Math.max(100, timeLeft * 10);
-    playerScore += points;
-    update(playerRef, { score: playerScore });
-  }
 }
 
 function showFeedback(roomData) {
   document.getElementById('questionScreen').classList.add('hidden');
   document.getElementById('feedbackScreen').classList.remove('hidden');
+  document.getElementById('leaderboardScreen').classList.add('hidden');
   
   const question = roomData.questionData;
   const playerData = roomData.players[playerId];
@@ -559,29 +695,56 @@ function showFeedback(roomData) {
     document.getElementById('feedbackScore').textContent = '+0 pts';
   }
   
-  // Highlight correct answer
-  const buttons = document.querySelectorAll('.answer-btn');
-  buttons.forEach((btn, index) => {
-    if (index === question.correct) {
-      btn.classList.add('correct');
-    } else if (index === currentAnswer && index !== question.correct) {
-      btn.classList.add('wrong');
-    }
-  });
+  // Highlight correct answer on question screen (for reference)
+  setTimeout(() => {
+    const buttons = document.querySelectorAll('.answer-btn');
+    buttons.forEach((btn, index) => {
+      if (index === question.correct) {
+        btn.classList.add('correct');
+      } else if (index === currentAnswer && index !== question.correct) {
+        btn.classList.add('wrong');
+      }
+    });
+  }, 100);
 }
 
-function showEndGame() {
+function showFinalLeaderboard(roomData) {
   document.getElementById('questionScreen').classList.add('hidden');
-  document.getElementById('feedbackScreen').classList.remove('hidden');
-  document.getElementById('feedbackIcon').textContent = '🏆';
-  document.getElementById('feedbackMessage').textContent = 'Game Over!';
-  document.getElementById('feedbackScore').textContent = `Final Score: ${playerScore} pts`;
+  document.getElementById('feedbackScreen').classList.add('hidden');
+  document.getElementById('leaderboardScreen').classList.remove('hidden');
+  
+  const players = roomData.players || {};
+  const sortedPlayers = Object.entries(players)
+    .sort((a, b) => (b[1].score || 0) - (a[1].score || 0));
+  
+  const leaderboard = document.getElementById('finalLeaderboard');
+  leaderboard.innerHTML = '';
+  
+  sortedPlayers.forEach(([id, player], index) => {
+    const playerDiv = document.createElement('div');
+    playerDiv.className = `leaderboard-item fade-in ${index < 3 ? 'rank-' + (index + 1) : ''}`;
+    const medal = index === 0 ? '🥇' : index === 1 ? '🥈' : index === 2 ? '🥉' : `${index + 1}.`;
+    playerDiv.innerHTML = `
+      <span style="font-size: 1.3rem; font-weight: 600;">${medal} ${player.name || 'Player'}</span>
+      <span style="font-size: 1.5rem; font-weight: 900; color: #ffd700;">${player.score || 0} pts</span>
+    `;
+    leaderboard.appendChild(playerDiv);
+  });
+  
+  document.getElementById('finalScore').textContent = `${playerScore} pts`;
 }
 
-// Set up event listeners
+function showError(message) {
+  const errorMsg = document.getElementById('errorMessage');
+  errorMsg.textContent = message;
+  setTimeout(() => {
+    errorMsg.textContent = '';
+  }, 5000);
+}
+
+// Event listeners
 document.getElementById('joinButton').addEventListener('click', joinRoom);
 
-// Allow Enter key to join
 document.getElementById('roomCodeInput').addEventListener('keypress', (e) => {
   if (e.key === 'Enter') joinRoom();
 });
